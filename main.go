@@ -19,6 +19,8 @@ type pattern struct {
 	Engine   string   `json:"engine,omitempty"`
 }
 
+const patternDirEnvVar = "GF_PATTERN_DIR"
+
 func main() {
 	var saveMode bool
 	flag.BoolVar(&saveMode, "save", false, "save a pattern (e.g: gf -save pat-name -Hnri 'search-pattern')")
@@ -122,6 +124,11 @@ func main() {
 func getPatternDir(customPatternDir string) (string, error) {
 	if customPatternDir != "" {
 		return customPatternDir, nil
+	}
+
+	envPatternDir := os.Getenv(patternDirEnvVar)
+	if envPatternDir != "" {
+		return envPatternDir, nil
 	}
 
 	usr, err := user.Current()
