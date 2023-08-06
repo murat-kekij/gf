@@ -29,10 +29,13 @@ func main() {
 	var dumpMode bool
 	flag.BoolVar(&dumpMode, "dump", false, "prints the grep command rather than executing it")
 
+	var customPatternDir string
+	flag.StringVar(&customPatternDir, "pattern-dir", "", "specify custom pattern directory")
+
 	flag.Parse()
 
 	if listMode {
-		pats, err := getPatterns()
+		pats, err := getPatterns(customPatternDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			return
@@ -47,7 +50,7 @@ func main() {
 		flags := flag.Arg(1)
 		pattern := flag.Arg(2)
 
-		err := savePattern(name, flags, pattern)
+		err := savePattern(name, flags, pattern, customPatternDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
@@ -60,7 +63,7 @@ func main() {
 		files = "."
 	}
 
-	patDir, err := getPatternDir()
+	patDir, err := getPatternDir(customPatternDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to open user's pattern directory")
 		return
@@ -116,7 +119,11 @@ func main() {
 
 }
 
-func getPatternDir() (string, error) {
+func getPatternDir(customPatternDir string) (string, error) {
+	if customPatternDir != "" {
+		return customPatternDir, nil
+	}
+
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
@@ -129,7 +136,7 @@ func getPatternDir() (string, error) {
 	return filepath.Join(usr.HomeDir, ".gf"), nil
 }
 
-func savePattern(name, flags, pat string) error {
+func savePattern(name, flags, pat, customPatternDir string) error {
 	if name == "" {
 		return errors.New("name cannot be empty")
 	}
@@ -143,7 +150,7 @@ func savePattern(name, flags, pat string) error {
 		Pattern: pat,
 	}
 
-	patDir, err := getPatternDir()
+	patDir, err := getPatternDir(customPatternDir)
 	if err != nil {
 		return fmt.Errorf("failed to determine pattern directory: %s", err)
 	}
@@ -166,10 +173,10 @@ func savePattern(name, flags, pat string) error {
 	return nil
 }
 
-func getPatterns() ([]string, error) {
+func getPatterns(customPatternDir string) ([]string, error) {
 	out := []string{}
 
-	patDir, err := getPatternDir()
+	patDir, err := getPatternDir(customPatternDir)
 	if err != nil {
 		return out, fmt.Errorf("failed to determine pattern directory: %s", err)
 	}
